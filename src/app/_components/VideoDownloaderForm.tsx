@@ -48,9 +48,9 @@ export default function VideoDownloaderForm() {
     setSubmittedUrl(null)
     setSelectedFormatId(null)
     // Use queryClient to reset the specific query state
-    utils.video.getVideoFormats.reset() // Reset query associated with this path
-    downloadMutation.reset()
-  }, [url, utils, downloadMutation])
+    void utils.video.getVideoFormats.reset()
+    void downloadMutation.reset() // Mark promise as intentionally ignored
+  }, [url]) // Only depend on url
 
   // Auto-select the first format when formats load
   useEffect(() => {
@@ -202,7 +202,8 @@ export default function VideoDownloaderForm() {
       {/* Display general notes if no results yet */}
       {!submittedUrl && (
         <p className="mt-8 text-center text-xs text-gray-500">
-          Enter a video URL and click "Fetch Available Formats" to begin.
+          Enter a video URL and click &quot;Fetch Available Formats&quot; to
+          begin.
         </p>
       )}
       {submittedUrl &&
