@@ -98,7 +98,7 @@ export default function Footer({
           visible: { transition: { staggerChildren: 0.1 } },
         }}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pb-8 border-b border-gray-300 dark:border-gray-700">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-8 border-b border-gray-300 dark:border-gray-700">
           {/* About Section */}
           <motion.div variants={fadeIn} className="col-span-1 lg:col-span-1">
             <h3 className="text-xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">
@@ -166,17 +166,6 @@ export default function Footer({
               </ul>
             </motion.div>
           ))}
-
-          {/* Newsletter/Coming Soon */}
-          <motion.div variants={fadeIn} className="col-span-1 lg:col-span-1">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-              Stay Updated
-            </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-              Newsletter functionality is coming soon! Check back later for
-              updates on projects and articles.
-            </p>
-          </motion.div>
         </div>
 
         {/* Bottom Section */}

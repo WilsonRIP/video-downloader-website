@@ -51,7 +51,7 @@ export default async function AboutPage() {
         {/* Footer Credit */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-300">
-            Made by WilsonRIP w/ help from Sean
+            Made by WilsonRIP w/ help from Sean + AI
           </p>
         </div>
       </div>
