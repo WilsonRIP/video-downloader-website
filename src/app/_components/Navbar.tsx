@@ -5,6 +5,8 @@ import { Poetsen_One } from 'next/font/google'
 import { useState, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import Image from 'next/image'
+import { Open_Sans } from 'next/font/google'
+import { WEBSITE_NAME } from '~/app/lib/types'
 
 // Load Poetsen One (Google Font) at build‑time
 const poetsen = Poetsen_One({
@@ -12,13 +14,23 @@ const poetsen = Poetsen_One({
   subsets: ['latin'],
 })
 
-const navLinks = [{ href: '/', label: 'Home' }]
+const openSans = Open_Sans({
+  weight: '400',
+  subsets: ['latin'],
+})
 
 export default function Navbar() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+
+  // Define navLinks inside the component
+  const navLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/about', label: 'About' },
+    { href: '/compressor', label: 'Compressor' },
+  ]
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -54,7 +66,7 @@ export default function Navbar() {
   return (
     <header
       className={`${
-        poetsen.className
+        openSans.className
       } sticky top-0 z-50 backdrop-blur-lg transition-all duration-300 ${
         isScrolled ? 'py-2' : 'py-3'
       } bg-white/70 text-gray-800 dark:bg-gray-900/70 dark:text-white ${
@@ -63,28 +75,29 @@ export default function Navbar() {
           : 'shadow-sm dark:shadow-gray-800'
       }`}
     >
-      <div className="container mx-auto flex items-center px-4">
+      <div className="container mx-auto flex items-center justify-between px-4">
         {/* Logo */}
         <Link
           href="/"
-          className="mr-8 flex items-center text-xl font-semibold tracking-wide md:text-2xl"
+          className="flex items-center text-xl font-semibold tracking-wide md:text-2xl"
         >
           <Image
-            src="/icon.png"
-            alt="Cat"
+            src="/icons8-video-64.png"
+            alt="Video Downloader"
             width={32}
             height={32}
             className="h-7 w-7 rounded-full"
             priority
           />
-          <span className="ml-2 hidden bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent sm:inline">
-            Wilson
+          <span className="ml-2 whitespace-nowrap hidden bg-gradient-to-r from-teal-400 to-blue-500 bg-clip-text text-transparent sm:inline">
+            {WEBSITE_NAME}
           </span>
         </Link>
 
-        {/* Desktop Navigation - Moved to the left */}
-        {!isMobile && (
-          <div className="flex w-full items-center justify-between">
+        {/* Right-side content: Nav Links + Theme Toggle (Desktop) OR Menu Button + Theme Toggle (Mobile) */}
+        <div className="flex items-center gap-4">
+          {/* Desktop Navigation */}
+          {!isMobile && (
             <ul className="flex gap-6">
               {navLinks.map(({ href, label }) => {
                 const isActive = pathname === href
@@ -107,19 +120,13 @@ export default function Navbar() {
                 )
               })}
             </ul>
+          )}
 
-            {/* Theme Toggle */}
-            <ThemeToggle />
-          </div>
-        )}
+          {/* Theme Toggle - common to both desktop and mobile */}
+          <ThemeToggle />
 
-        {/* Mobile Content (Theme Toggle + Menu Button) */}
-        {isMobile && (
-          <div className="ml-auto flex items-center gap-4">
-            {/* Theme Toggle */}
-            <ThemeToggle />
-
-            {/* Mobile Menu Button */}
+          {/* Mobile Menu Button */}
+          {isMobile && (
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="z-50 flex flex-col items-center justify-center space-y-1.5 md:hidden"
@@ -141,8 +148,8 @@ export default function Navbar() {
                 }`}
               />
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}

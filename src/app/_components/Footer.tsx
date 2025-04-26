@@ -2,8 +2,8 @@
 
 import { Mulish } from "next/font/google";
 import { useState, useEffect } from "react";
-import { socialLinks, SocialLink } from "../data/socials";
-import { WEBSITE_NAME } from "@/lib/types";
+import { socialLinks, type SocialLink } from "~/app/lib/socials";
+import { WEBSITE_NAME, WEBSITE_DESCRIPTION } from "~/app/lib/types";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
@@ -65,7 +65,7 @@ export default function Footer({
 
   return (
     <footer
-      className={`${mulish.className} relative text-gray-800 dark:text-white py-12 mt-16`}
+      className={`${mulish.className} relative text-gray-800 dark:text-white py-12 mt-auto`}
     >
       {/* Background */}
       {backgroundImage && (
@@ -105,8 +105,7 @@ export default function Footer({
               {WEBSITE_NAME}
             </h3>
             <p className="text-gray-600 dark:text-gray-400 text-sm mb-6">
-              A passionate developer focused on creating intuitive and engaging
-              digital experiences.
+              {WEBSITE_DESCRIPTION}
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social: SocialLink) => (
