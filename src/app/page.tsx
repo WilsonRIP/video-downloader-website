@@ -15,7 +15,7 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center text-white dark:bg-white dark:bg-gradient-to-b dark:from-[#2e026d] dark:to-[#15162c]">
+      <main className="flex min-h-screen flex-col items-center justify-center text-white">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
           <h1 className="text-5xl font-extrabold tracking-tight text-black sm:text-[5rem] dark:text-white">
             Video Downloader

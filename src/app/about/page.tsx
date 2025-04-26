@@ -1,6 +1,6 @@
 export default async function AboutPage() {
   return (
-    <main className="min-h-screen py-12 px-4 text-gray-900 dark:text-white dark:bg-gradient-to-b dark:from-[#2e026d] dark:to-[#15162c]">
+    <main className="min-h-screen py-12 px-4 text-gray-900 dark:text-white">
       <div className="container mx-auto max-w-3xl">
         <h1 className="mb-8 text-center text-4xl font-bold text-gray-900 dark:text-white">
           About This Video Downloader

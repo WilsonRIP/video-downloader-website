@@ -112,7 +112,7 @@ export default function CompressorPage() {
     : '0'
 
   return (
-    <div className="min-h-screen text-gray-900 dark:text-white dark:bg-gradient-to-b dark:from-[#2e026d] dark:to-[#15162c]">
+    <div className="min-h-screen text-gray-900 dark:text-white">
       <div className="container mx-auto px-4 py-12">
         <h1 className="text-4xl font-bold mb-8 text-center text-gray-900 dark:text-white">File Compressor (Gzip)</h1>
 
@@ -183,4 +183,4 @@ export default function CompressorPage() {
       </div>
     </div>
   )
-} 
+}
