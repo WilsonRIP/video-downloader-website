@@ -109,7 +109,7 @@ export default function Navbar() {
             </ul>
 
             {/* Theme Toggle */}
-            <ThemeToggle className="ml-auto" />
+            <ThemeToggle />
           </div>
         )}
 

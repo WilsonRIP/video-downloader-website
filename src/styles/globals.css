@@ -1,6 +1,15 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
-@theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+/* Tailwind v4 handles base, components, and utilities via the import */
+/* Add any custom CSS overrides or definitions below */
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --color-primary: #000;
+  --color-secondary: #fff;
+}
+
+.white {
+  --color-primary: #fff;
+  --color-secondary: #000;
 }

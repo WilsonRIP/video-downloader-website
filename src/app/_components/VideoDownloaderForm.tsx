@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { api } from '~/trpc/react' // Import the tRPC API client
 
 // Define type for format options received from backend
@@ -36,7 +36,41 @@ export default function VideoDownloaderForm() {
   const isLoadingFormats = formatsQuery.isFetching
   const formatsError = formatsQuery.error?.message ?? null
   const videoTitle = formatsQuery.data?.title
-  const availableFormats: FormatOption[] = formatsQuery.data?.formats ?? []
+
+  // Process formats: Deduplicate and add MP3 option
+  const processedFormats = useMemo(() => {
+    const rawFormats = formatsQuery.data?.formats ?? []
+    if (!rawFormats) return []
+
+    // Deduplicate using formatId (treat undefined formatId based on label)
+    const uniqueFormatsMap = new Map<string, FormatOption>()
+    rawFormats.forEach((format) => {
+      const key = format.formatId ?? `label:${format.label ?? 'unknown'}` // Use label as fallback key
+      if (!uniqueFormatsMap.has(key)) {
+        uniqueFormatsMap.set(key, format)
+      }
+    })
+    const uniqueFormats = Array.from(uniqueFormatsMap.values())
+
+    // Check if an MP3 format exists (case-insensitive label check)
+    const hasMp3 = uniqueFormats.some((format) =>
+      format.label?.toLowerCase().includes('mp3')
+    )
+
+    // Add custom MP3 option if not found
+    if (!hasMp3) {
+      const mp3Option: FormatOption = {
+        formatId: 'mp3', // Use a specific ID for manual MP3
+        label: 'MP3 Audio',
+      }
+      // Add MP3 option (e.g., at the beginning)
+      return [mp3Option, ...uniqueFormats]
+    }
+
+    return uniqueFormats
+  }, [formatsQuery.data?.formats]) // Depend on the raw formats data
+
+  const availableFormats: FormatOption[] = processedFormats // Use the processed list
 
   const isLoadingLink = downloadMutation.isPending
   const linkError = downloadMutation.error?.message ?? null
@@ -70,7 +104,8 @@ export default function VideoDownloaderForm() {
     else if (availableFormats.length === 0) {
       setSelectedFormatId(null)
     }
-  }, [availableFormats])
+    // Add selectedFormatId to dependency array if formatsQuery.data changes but availableFormats doesn't trigger update
+  }, [availableFormats, selectedFormatId]) // Ensure selectedFormatId is a dependency
 
   // --- Handlers ---
   // Trigger fetching formats
@@ -145,7 +180,7 @@ export default function VideoDownloaderForm() {
                 setSelectedFormatId(e.target.value)
                 downloadMutation.reset() // Reset link state if format changes
               }}
-              className="w-full rounded-md border border-gray-300 bg-white/[0.1] px-4 py-2 text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:outline-none"
+              className="bg-opacity-50 w-full appearance-none rounded-md border border-gray-600 bg-gray-800 px-4 py-2 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:outline-none"
               disabled={isProcessing}
             >
               <option value="" disabled>
@@ -189,13 +224,8 @@ export default function VideoDownloaderForm() {
             download // Suggests the browser download the linked file
             className="inline-block rounded-md bg-green-600 px-6 py-3 font-semibold text-white transition hover:bg-green-700"
           >
-            Download Video
+            {selectedFormatId === 'mp3' ? 'Download Audio' : 'Download Video'}
           </a>
-          {/* Add a note about placeholder */}
-          <p className="mt-4 text-sm text-gray-400">
-            (Note: This is a placeholder link. Backend download logic needs
-            implementation.)
-          </p>
         </div>
       )}
 

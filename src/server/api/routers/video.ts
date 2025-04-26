@@ -249,57 +249,155 @@ export const videoRouter = createTRPCRouter({
       }
     }),
 
-  // Procedure to get the final download link for a specific format
+  // Procedure to get the download link for a specific format or best audio (mp3)
   getDownloadLink: publicProcedure
     .input(
       z.object({
         url: z.string().url('Invalid URL provided.'),
-        formatId: z.string().min(1, 'Format ID must be selected.'), // Make formatId required
+        formatId: z.string().optional(), // formatId is optional for default/mp3
       })
     )
     .mutation(async ({ input }) => {
-      // Remains mutation as it might have side effects later
-      try {
-        const videoInfo = await getCachedVideoInfo(input.url) // Fetch (potentially cached) info again
-        let downloadUrl: string | undefined
+      const { url, formatId: requestedFormatId } = input
+      console.log(
+        `getDownloadLink called for URL: ${url} with formatId: ${requestedFormatId ?? 'default/best'}`
+      )
 
-        if (input.formatId === 'direct' && videoInfo.url) {
-          downloadUrl = videoInfo.url
-          console.log(`Returning direct download URL: ${downloadUrl}`)
-        } else {
-          const selectedFormat = videoInfo.formats?.find(
-            (f) => f.format_id === input.formatId
-          )
-          downloadUrl = selectedFormat?.url
-          if (downloadUrl) {
+      try {
+        // Always get the full info first, using cache
+        const videoInfo = await getCachedVideoInfo(url)
+        let downloadUrl: string | null = null
+        let foundFormatDescription = 'selected format' // For error messages
+
+        if (requestedFormatId === 'mp3') {
+          // --- MP3 Handling ---
+          foundFormatDescription = 'MP3 (best audio)'
+          console.log(`Attempting to find best audio stream for MP3...`)
+          const audioFormats = (videoInfo.formats ?? [])
+            .filter(
+              (f): f is VideoFormat & { url: string; tbr: number } =>
+                typeof f.url === 'string' &&
+                f.acodec !== 'none' &&
+                f.vcodec === 'none' && // Ensure it's audio only
+                typeof f.tbr === 'number' // Ensure bitrate is available for sorting
+            )
+            .sort((a, b) => b.tbr - a.tbr) // Sort by bitrate descending
+
+          if (audioFormats.length > 0 && audioFormats[0]?.url) {
+            downloadUrl = audioFormats[0].url
             console.log(
-              `Found URL for format ${input.formatId}: ${downloadUrl}`
+              `Found best audio format for MP3: ${audioFormats[0].format_id ?? 'N/A'} (Bitrate: ${audioFormats[0].tbr}k)`
             )
           } else {
+            console.warn(
+              `No suitable audio-only format found for MP3 for URL: ${url}`
+            )
+            // Attempt fallback: any format with audio and a URL?
+            const fallbackAudio = (videoInfo.formats ?? [])
+              .filter(
+                (f): f is VideoFormat & { url: string; acodec: string } =>
+                  typeof f.url === 'string' && f.acodec !== 'none'
+              )
+              .sort((a, b) => (b.tbr ?? 0) - (a.tbr ?? 0)) // Sort by bitrate if available
+
+            if (fallbackAudio.length > 0 && fallbackAudio[0]?.url) {
+              downloadUrl = fallbackAudio[0].url
+              console.log(
+                `Using fallback audio format for MP3: ${fallbackAudio[0].format_id ?? 'N/A'} (Codec: ${fallbackAudio[0].acodec})`
+              )
+            } else {
+              throw new Error('Could not find any suitable audio stream.')
+            }
+          }
+        } else if (requestedFormatId && requestedFormatId !== 'direct') {
+          // --- Specific Video/Audio Format Handling ---
+          foundFormatDescription = `format ${requestedFormatId}`
+          console.log(`Searching for specific formatId: ${requestedFormatId}`)
+          const specificFormat = (videoInfo.formats ?? []).find(
+            (f) => f.format_id === requestedFormatId
+          )
+
+          if (specificFormat?.url) {
+            downloadUrl = specificFormat.url
+            console.log(`Found URL for formatId ${requestedFormatId}.`)
+          } else {
             console.error(
-              `Format ID ${input.formatId} not found or has no URL for URL: ${input.url}`
+              `Format ID ${requestedFormatId} not found or has no URL for URL: ${url}`
+            )
+            throw new Error(
+              `Format ID ${requestedFormatId} not found or has no URL.`
+            )
+          }
+        } else {
+          // --- Default/Direct Handling ---
+          // Use the existing helper function to select the best default (likely MP4)
+          // or handle the 'direct' case if formats array was empty but direct URL exists
+          foundFormatDescription = 'default format'
+          if (
+            videoInfo.url &&
+            (!videoInfo.formats || videoInfo.formats.length === 0)
+          ) {
+            // Handle direct URL case explicitly
+            downloadUrl = videoInfo.url
+            console.log(`Using direct URL from video info: ${downloadUrl}`)
+          } else {
+            // Use the selector function for best default video
+            downloadUrl = selectDownloadUrl(videoInfo)
+            console.log(`Used selectDownloadUrl, result: ${downloadUrl}`)
+          }
+
+          if (!downloadUrl) {
+            console.error(
+              `Could not determine a default download URL for: ${url}`
+            )
+            throw new Error(
+              'Could not determine a suitable default video download URL.'
             )
           }
         }
 
+        // Final check if a URL was actually found
         if (!downloadUrl) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: `Could not find a download link for the selected format (${input.formatId}). Try another format.`,
-          })
+          console.error(
+            `Failed to obtain any download URL for format ${requestedFormatId ?? 'default'} and URL ${url}`
+          )
+          throw new Error(`Failed to resolve a download URL for the request.`)
         }
 
         return { downloadUrl }
-      } catch (error) {
-        // Catch errors from getCachedVideoInfo and re-throw
-        if (error instanceof TRPCError) {
-          throw error
+      } catch (error: unknown) {
+        // Improved Error Handling
+        const originalErrorMessage =
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        console.error(
+          `[TRPC] Error in getDownloadLink for URL ${url} (Format: ${requestedFormatId ?? 'default'}):`,
+          originalErrorMessage,
+          error instanceof Error ? error.stack : '' // Log stack for debugging
+        )
+
+        let finalMessage = `Could not get download link for ${requestedFormatId === 'mp3' ? 'MP3 audio' : requestedFormatId ? `format ${requestedFormatId}` : 'the default format'}.`
+
+        // Add more specific context if possible from original error
+        if (originalErrorMessage.includes('audio stream')) {
+          finalMessage = 'Could not find a suitable audio stream for MP3.'
+        } else if (originalErrorMessage.includes('Format ID')) {
+          finalMessage = originalErrorMessage // Use the specific error message
+        } else if (originalErrorMessage.includes('Default download URL')) {
+          finalMessage =
+            'Could not determine a suitable default video download URL.'
         }
-        console.error('Unexpected error in getDownloadLink mutation:', error)
+
+        // Append suggestion only if it's not a fundamental fetch error handled earlier
+        if (!(error instanceof TRPCError && error.code === 'BAD_REQUEST')) {
+          finalMessage += ' Try another format or check the URL.'
+        } else {
+          finalMessage = originalErrorMessage // Use the message from BAD_REQUEST error
+        }
+
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message:
-            'An unexpected error occurred while getting the download link.',
+          code:
+            error instanceof TRPCError ? error.code : 'INTERNAL_SERVER_ERROR', // Preserve original code if available
+          message: finalMessage,
           cause: error,
         })
       }
